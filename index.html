@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuji Border Studio</title>
+  <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+  <style>
+    :root {
+      --bg: #10100f;
+      --panel: #1b1a18;
+      --panel-2: #24221f;
+      --paper: #f4efe5;
+      --paper-warm: #efe3cf;
+      --ink: #141312;
+      --muted: #8c877d;
+      --line: rgba(255,255,255,.12);
+      --accent: #d8b46a;
+      --danger: #e97070;
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(216,180,106,.18), transparent 28rem),
+        linear-gradient(135deg, #10100f, #171512 48%, #0f0f0e);
+      color: #f5f0e8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      letter-spacing: -0.05em;
+      font-size: clamp(32px, 5vw, 64px);
+      line-height: .92;
+      font-weight: 850;
+    }
+
+    .brand p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      max-width: 700px;
+      line-height: 1.55;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--accent);
+      padding: 10px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: rgba(27,26,24,.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+      overflow: hidden;
+    }
+
+    .controls {
+      position: sticky;
+      top: 16px;
+    }
+
+    .section {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child { border-bottom: 0; }
+
+    .section h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    .dropzone {
+      position: relative;
+      display: flex;
+      min-height: 148px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+      border: 1.5px dashed rgba(216,180,106,.55);
+      background: rgba(216,180,106,.055);
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: .18s ease;
+      overflow: hidden;
+    }
+
+    .dropzone::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.035);
+      pointer-events: none;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      background: rgba(216,180,106,.12);
+      border-color: rgba(216,180,106,.8);
+      transform: translateY(-1px);
+    }
+
+    .dropzone strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .dropzone span {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-top: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    input[type="file"] { display: none; }
+
+    label.control-label {
+      display: block;
+      font-size: 13px;
+      color: #d9d1c3;
+      margin: 14px 0 8px;
+    }
+
+    input[type="range"], select, input[type="text"] {
+      width: 100%;
+    }
+
+    select, input[type="text"] {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      color: #f5f0e8;
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    input[type="range"] { accent-color: var(--accent); }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 74px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .value {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      color: var(--accent);
+      border-radius: 10px;
+      padding: 8px 9px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .switches {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255,255,255,.035);
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: #d9d1c3;
+      font-size: 13px;
+    }
+
+    .switch input { accent-color: var(--accent); }
+
+    .btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 14px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: .18s ease;
+      color: var(--ink);
+      background: var(--accent);
+    }
+
+    button.secondary {
+      background: var(--panel-2);
+      color: #f5f0e8;
+      border: 1px solid var(--line);
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.04); }
+    button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .preview-card {
+      min-height: 76vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .preview-top {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .meta-pill span {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      border-radius: 999px;
+      padding: 7px 10px;
+    }
+
+    .canvas-wrap {
+      min-height: 620px;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      overflow: auto;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,.025) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,.025) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,.025) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.025) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+      background: #fff;
+    }
+
+    .empty {
+      max-width: 560px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.6;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      padding: 28px;
+      border-radius: var(--radius);
+    }
+
+    .exif {
+      padding: 18px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .exif-item {
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .exif-item small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 5px;
+    }
+
+    .exif-item b {
+      display: block;
+      color: #f7f1e7;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+
+    .warning {
+      color: #ffd39c;
+    }
+
+    @media (max-width: 980px) {
+      header { display: block; }
+      .badge { display: inline-block; margin-top: 16px; }
+      .grid { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .exif { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 540px) {
+      .app { width: min(100vw - 18px, 1480px); padding-top: 14px; }
+      .section { padding: 16px; }
+      .canvas-wrap { padding: 12px; min-height: 420px; }
+      .exif { grid-template-columns: 1fr; }
+      .btns { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <h1>Fuji Border Studio</h1>
+        <p>Upload a Fujifilm JPEG, auto-detect its aspect ratio, extract camera settings, then export a clean border-ready image.</p>
+      </div>
+      <div class="badge">Fujifilm EXIF Border Generator</div>
+    </header>
+
+    <section class="grid">
+      <aside class="card controls">
+        <div class="section">
+          <h2>1. Upload</h2>
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <strong>Drop photo here</strong>
+            <span>or click to choose a Fuji JPEG / PNG / TIFF</span>
+          </label>
+          <input id="fileInput" type="file" accept="image/*,.raf,.RAF" />
+          <p class="note">Best result: original JPEG straight from a Fujifilm camera. Social-media exports often strip MakerNote data, including film simulation.</p>
+        </div>
+
+        <div class="section">
+          <h2>2. Border Style</h2>
+          <label class="control-label" for="preset">Preset</label>
+          <select id="preset">
+            <option value="classic">1. Classic Fuji Lab</option>
+            <option value="minimal">2. Minimal Gallery</option>
+            <option value="contact">3. Contact Sheet</option>
+            <option value="instant">4. Instant Print</option>
+            <option value="dark">5. Black Archive</option>
+            <option value="gallery">6. Fine Art Gallery</option>
+            <option value="warmmatte">7. Warm Matte</option>
+            <option value="blackmatte">8. Black Matte</option>
+            <option value="archival">9. Archival Museum</option>
+            <option value="luxe">10. Luxe Gold</option>
+          </select>
+
+          <label class="control-label" for="borderSize">Border Size</label>
+          <div class="row">
+            <input id="borderSize" type="range" min="4" max="32" value="12" />
+            <span class="value" id="borderSizeVal">12%</span>
+          </div>
+
+          <label class="control-label" for="bottomExtra">Bottom Caption Space</label>
+          <div class="row">
+            <input id="bottomExtra" type="range" min="0" max="30" value="10" />
+            <span class="value" id="bottomExtraVal">10%</span>
+          </div>
+
+          <label class="control-label" for="outputSize">Output Long Edge</label>
+          <select id="outputSize">
+            <option value="original">Original based</option>
+            <option value="2048">2048 px</option>
+            <option value="3000" selected>3000 px</option>
+            <option value="4000">4000 px</option>
+            <option value="6000">6000 px</option>
+          </select>
+
+          <div class="switches">
+            <label class="switch">Show EXIF caption <input id="showCaption" type="checkbox" checked /></label>
+            <label class="switch">Show aspect ratio <input id="showRatio" type="checkbox" checked /></label>
+            <label class="switch">Show Fuji mark <input id="showBrand" type="checkbox" checked /></label>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>3. Manual Overrides</h2>          <label class="control-label" for="manualTitle">Optional Title</label>
+          <input id="manualTitle" type="text" placeholder="e.g. Kota Bharu Evening" />
+        </div>
+
+        <div class="section">
+          <h2>4. Export</h2>
+          <div class="btns">
+            <button id="downloadBtn" disabled>Download PNG</button>
+            <button id="resetBtn" class="secondary">Reset</button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="card preview-card">
+        <div class="preview-top">
+          <span id="status">No photo loaded</span>
+          <div class="meta-pill" id="quickMeta"></div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="empty" id="emptyState">
+            <h2 style="margin:0 0 10px;color:#f5f0e8;letter-spacing:-.03em;">Upload a Fujifilm photo</h2>
+            <p style="margin:0;">The app will read EXIF, detect image ratio like 3:2, 4:3, 1:1, 16:9, portrait variants, then generate a polished border with camera settings.</p>
+          </div>
+          <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        <div class="exif" id="exifGrid"></div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const state = {
+      file: null,
+      image: null,
+      bitmapUrl: null,
+      arrayBuffer: null,
+      exif: {},      ratioLabel: '',
+      orientation: '',
+      original: { width: 0, height: 0 }
+    };
+    const CONTROLS = [
+      'preset', 'borderSize', 'bottomExtra', 'outputSize', 'showCaption',
+      'showRatio', 'showBrand', 'manualTitle'
+    ];
+
+    const PRESETS = {
+      classic:   { bg: '#f4efe5', photoBg: '#111111', text: '#171411', muted: '#6f675d', accent: '#a67c35' },
+      minimal:   { bg: '#fbfaf6', photoBg: '#111111', text: '#111111', muted: '#777777', accent: '#111111' },
+      contact:   { bg: '#eee7d8', photoBg: '#191919', text: '#171411', muted: '#6f675d', accent: '#b23b2d' },
+      instant:   { bg: '#fff7e8', photoBg: '#111111', text: '#1a1713', muted: '#817568', accent: '#d49b35' },
+      dark:      { bg: '#111111', photoBg: '#050505', text: '#f3eadb', muted: '#9c958d', accent: '#d8b46a' },
+      gallery:   { bg: '#f8f8f6', photoBg: '#0d0d0d', text: '#111111', muted: '#666666', accent: '#444444' },
+      warmmatte: { bg: '#efe3cf', photoBg: '#111111', text: '#201b16', muted: '#7b6d5e', accent: '#a87a46' },
+      blackmatte:{ bg: '#0a0a0a', photoBg: '#000000', text: '#f5f5f5', muted: '#9d9d9d', accent: '#e0e0e0' },
+      archival:  { bg: '#f0eadf', photoBg: '#161616', text: '#17130f', muted: '#786f63', accent: '#8b7355' },
+      luxe:      { bg: '#1b1712', photoBg: '#050505', text: '#f7eddc', muted: '#b7a893', accent: '#d2aa59' }
+    };
+
+    function gcd(a, b) {
+      return b === 0 ? a : gcd(b, a % b);
+    }
+
+    function detectAspectRatio(width, height) {
+      const candidates = [
+        [1, 1, '1:1'], [3, 2, '3:2'], [2, 3, '2:3'], [4, 3, '4:3'], [3, 4, '3:4'],
+        [16, 9, '16:9'], [9, 16, '9:16'], [5, 4, '5:4'], [4, 5, '4:5'],
+        [7, 6, '7:6'], [6, 7, '6:7'], [65, 24, '65:24 XPan'], [24, 65, '24:65 XPan Portrait']
+      ];
+      const ratio = width / height;
+      let best = candidates[0];
+      let bestDiff = Infinity;
+      for (const c of candidates) {
+        const diff = Math.abs(ratio - c[0] / c[1]);
+        if (diff < bestDiff) { bestDiff = diff; best = c; }
+      }
+      if (bestDiff < 0.025) return best[2];
+      const d = gcd(width, height);
+      const rw = Math.round(width / d);
+      const rh = Math.round(height / d);
+      if (rw < 100 && rh < 100) return `${rw}:${rh}`;
+      return `${ratio.toFixed(2)}:1`;
+    }
+    function formatAperture(exif) {
+      const value = exif.FNumber || exif.ApertureValue;
+      if (!value) return '—';
+      const number = typeof value === 'number' ? value : Number(value);
+      return Number.isFinite(number) ? `f/${trim(number, 1)}` : String(value);
+    }
+
+    function formatShutter(exif) {
+      const value = exif.ExposureTime || exif.ShutterSpeedValue;
+      if (!value) return '—';
+      const num = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(num)) return String(value);
+      if (num >= 1) return `${trim(num, 1)}s`;
+      return `1/${Math.round(1 / num)}`;
+    }
+
+    function formatIso(exif) {
+      return exif.ISO || exif.ISOSpeedRatings || exif.PhotographicSensitivity || '—';
+    }
+
+    function formatFocal(exif) {
+      const value = exif.FocalLength || exif.FocalLengthIn35mmFormat;
+      if (!value) return '—';
+      const num = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(num)) return String(value);
+      return `${trim(num, 1)}mm`;
+    }
+
+    function formatEv(exif) {
+      const value = exif.ExposureCompensation || exif.ExposureBiasValue;
+      if (value === undefined || value === null || value === '') return '—';
+      const num = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(num)) return String(value);
+      return `${num > 0 ? '+' : ''}${trim(num, 2)} EV`;
+    }
+
+    function trim(num, places = 2) {
+      return Number(num).toFixed(places).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    }
+
+    function getCamera(exif) {
+      const make = cleanup(exif.Make || '');
+      const model = cleanup(exif.Model || '');
+      if (model && make && !model.toLowerCase().includes(make.toLowerCase())) return `${make} ${model}`.trim();
+      return model || make || 'Fujifilm Camera';
+    }
+
+    function getLens(exif) {
+      return cleanup(exif.LensModel || exif.Lens || exif.LensInfo || 'Unknown Lens');
+    }
+
+    function cleanup(value) {
+      return String(value || '').replace(/\u0000/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    async function loadFile(file) {
+      resetCanvasOnly();
+      state.file = file;
+      state.arrayBuffer = await file.arrayBuffer();
+      const img = new Image();
+      if (state.bitmapUrl) URL.revokeObjectURL(state.bitmapUrl);
+      state.bitmapUrl = URL.createObjectURL(file);
+      img.src = state.bitmapUrl;
+      await img.decode();
+      state.image = img;
+      state.original = { width: img.naturalWidth, height: img.naturalHeight };
+      state.ratioLabel = detectAspectRatio(img.naturalWidth, img.naturalHeight);
+      state.orientation = img.naturalWidth > img.naturalHeight ? 'Landscape' : img.naturalWidth < img.naturalHeight ? 'Portrait' : 'Square';
+
+      try {
+        state.exif = await exifr.parse(state.arrayBuffer, {
+          tiff: true,
+          ifd0: true,
+          exif: true,
+          gps: true,
+          xmp: true,
+          icc: false,
+          iptc: true,
+          jfif: true,
+          ihdr: true,
+          mergeOutput: true,
+          translateKeys: true,
+          translateValues: true,
+          reviveValues: true
+        }) || {};
+      } catch (error) {
+        state.exif = {};
+        console.warn('EXIF read failed:', error);
+      }
+      render();
+    }
+
+    function getCaptionData() {
+      const exif = state.exif || {};
+      return {
+        camera: getCamera(exif),
+        lens: getLens(exif),
+        shutter: formatShutter(exif),
+        aperture: formatAperture(exif),
+        iso: formatIso(exif),
+        focal: formatFocal(exif),
+        ev: formatEv(exif),
+        wb: cleanup(exif.WhiteBalance || exif.WhiteBalanceMode || '—'),        ratio: state.ratioLabel || '—',
+        title: cleanup($('manualTitle').value)
+      };
+    }
+
+    function getOutputDimensions(imageWidth, imageHeight, borderPct, bottomPct) {
+      const outputLongEdge = $('outputSize').value;
+      let photoW = imageWidth;
+      let photoH = imageHeight;
+      if (outputLongEdge !== 'original') {
+        const long = Number(outputLongEdge);
+        if (imageWidth >= imageHeight) {
+          photoW = long;
+          photoH = Math.round(long * imageHeight / imageWidth);
+        } else {
+          photoH = long;
+          photoW = Math.round(long * imageWidth / imageHeight);
+        }
+      }
+      const side = Math.round(Math.max(photoW, photoH) * borderPct / 100);
+      const top = side;
+      const bottom = Math.round(side + Math.max(photoW, photoH) * bottomPct / 100);
+      return {
+        photoW, photoH,
+        side, top, bottom,
+        canvasW: photoW + side * 2,
+        canvasH: photoH + top + bottom
+      };
+    }
+
+    function fitFont(ctx, text, maxWidth, startSize, minSize, weight = 700, family = 'Inter, Arial, sans-serif') {
+      let size = startSize;
+      while (size > minSize) {
+        ctx.font = `${weight} ${size}px ${family}`;
+        if (ctx.measureText(text).width <= maxWidth) break;
+        size -= 1;
+      }
+      return size;
+    }
+
+    function drawRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+    function drawPresetDecoration(ctx, dims, presetName, preset) {
+      if (presetName === 'contact') {
+        ctx.fillStyle = 'rgba(0,0,0,.05)';
+        const perf = Math.max(8, Math.round(dims.side * .16));
+        for (let x = dims.side * .35; x < dims.canvasW - dims.side * .35; x += perf * 2) {
+          ctx.fillRect(x, dims.top * .28, perf, perf * .55);
+          ctx.fillRect(x, dims.canvasH - dims.bottom * .45, perf, perf * .55);
+        }
+      }
+
+      if (presetName === 'instant') {
+        ctx.strokeStyle = 'rgba(0,0,0,.08)';
+        ctx.lineWidth = Math.max(2, Math.round(dims.canvasW * .002));
+        drawRoundRect(ctx, 8, 8, dims.canvasW - 16, dims.canvasH - 16, 10);
+        ctx.stroke();
+      }
+
+      if (presetName === 'gallery') {
+        ctx.strokeStyle = 'rgba(0,0,0,.12)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(14, 14, dims.canvasW - 28, dims.canvasH - 28);
+      }
+
+      if (presetName === 'warmmatte') {
+        ctx.strokeStyle = 'rgba(130,100,60,.18)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(16, 16, dims.canvasW - 32, dims.canvasH - 32);
+      }
+
+      if (presetName === 'blackmatte') {
+        ctx.strokeStyle = 'rgba(255,255,255,.08)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(14, 14, dims.canvasW - 28, dims.canvasH - 28);
+      }
+
+      if (presetName === 'archival') {
+        ctx.strokeStyle = 'rgba(80,60,40,.12)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(18, 18, dims.canvasW - 36, dims.canvasH - 36);
+        ctx.strokeRect(24, 24, dims.canvasW - 48, dims.canvasH - 48);
+      }
+
+      if (presetName === 'luxe') {
+        ctx.strokeStyle = 'rgba(210,170,89,.55)';
+        ctx.lineWidth = 2;
+        drawRoundRect(ctx, 14, 14, dims.canvasW - 28, dims.canvasH - 28, 8);
+        ctx.stroke();
+      }
+
+      if (presetName === 'classic') {
+        ctx.strokeStyle = 'rgba(0,0,0,.08)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(10, 10, dims.canvasW - 20, dims.canvasH - 20);
+      }
+
+      if (presetName === 'minimal') {
+        ctx.strokeStyle = 'rgba(0,0,0,.06)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(12, 12, dims.canvasW - 24, dims.canvasH - 24);
+      }
+
+      if (presetName === 'dark') {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(10, 10, dims.canvasW - 20, dims.canvasH - 20);
+      }
+    }
+
+    function render() {
+      if (!state.image) return;
+
+      const canvas = $('canvas');
+      const ctx = canvas.getContext('2d');
+      const borderPct = Number($('borderSize').value);
+      const bottomPct = Number($('bottomExtra').value);
+      const dims = getOutputDimensions(state.image.naturalWidth, state.image.naturalHeight, borderPct, bottomPct);
+      const preset = PRESETS[$('preset').value];
+      const dprSafeScale = 1;
+
+      canvas.width = Math.round(dims.canvasW * dprSafeScale);
+      canvas.height = Math.round(dims.canvasH * dprSafeScale);
+      canvas.style.width = `${Math.min(dims.canvasW, 1120)}px`;
+      canvas.style.display = 'block';
+      $('emptyState').style.display = 'none';
+      $('downloadBtn').disabled = false;
+
+      ctx.fillStyle = preset.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      drawPresetDecoration(ctx, dims, $('preset').value, preset);
+
+      const photoX = dims.side;
+      const photoY = dims.top;
+      ctx.fillStyle = preset.photoBg;
+      ctx.fillRect(photoX - 1, photoY - 1, dims.photoW + 2, dims.photoH + 2);
+      ctx.drawImage(state.image, photoX, photoY, dims.photoW, dims.photoH);
+
+      const data = getCaptionData();
+      const captionY = photoY + dims.photoH + Math.round(dims.bottom * .34);
+      const maxTextW = dims.canvasW - dims.side * 2;
+      const showCaption = $('showCaption').checked;
+
+      if (showCaption) {
+        ctx.fillStyle = preset.text;
+        ctx.textBaseline = 'alphabetic';
+        const primary = data.title || data.camera;
+        const primarySize = fitFont(ctx, primary, maxTextW * .62, Math.max(22, dims.canvasW * .022), 14, 800);
+        ctx.font = `800 ${primarySize}px Inter, Arial, sans-serif`;
+        ctx.fillText(primary, dims.side, captionY);
+
+        const settings = `${data.camera}  ·  ${data.lens}  ·  ${data.focal}  ·  ${data.aperture}  ·  ${data.shutter}  ·  ISO ${data.iso}`;
+        ctx.fillStyle = preset.muted;
+        const settingsSize = fitFont(ctx, settings, maxTextW, Math.max(16, dims.canvasW * .0145), 10, 650);
+        ctx.font = `650 ${settingsSize}px Inter, Arial, sans-serif`;
+        ctx.fillText(settings, dims.side, captionY + Math.round(settingsSize * 1.75));
+
+        const secondaryBits = [];
+        if (data.ev !== '—') secondaryBits.push(data.ev);
+        if (data.wb !== '—') secondaryBits.push(`WB ${data.wb}`);
+        if ($('showRatio').checked) secondaryBits.push(`${data.ratio} ${state.orientation}`);
+        const secondary = secondaryBits.join('  ·  ');
+        if (secondary) {
+          ctx.font = `600 ${Math.max(10, Math.round(settingsSize * .85))}px Inter, Arial, sans-serif`;
+          ctx.fillText(secondary, dims.side, captionY + Math.round(settingsSize * 3.05));
+        }
+      }
+
+      if ($('showBrand').checked) {
+        const brand = 'FUJIFILM';
+        const markSize = Math.max(12, dims.canvasW * .013);
+        ctx.font = `850 ${markSize}px Inter, Arial, sans-serif`;
+        ctx.fillStyle = preset.accent;
+        ctx.textAlign = 'right';
+        ctx.fillText(brand, dims.canvasW - dims.side, captionY);
+        ctx.font = `650 ${Math.max(9, markSize * .62)}px Inter, Arial, sans-serif`;
+        ctx.fillStyle = preset.muted;
+        ctx.fillText(data.ratio, dims.canvasW - dims.side, captionY + Math.round(markSize * 1.35));
+        ctx.textAlign = 'left';
+      }
+      updateUiMeta(data);
+    }
+
+    function updateUiMeta(data) {
+      $('status').textContent = `${state.file.name} · ${state.original.width}×${state.original.height}`;
+      $('quickMeta').innerHTML = `
+        <span>${state.ratioLabel}</span>
+        <span>${data.camera}</span>
+        <span>${data.aperture}</span>
+      `;
+
+      const rows = [
+        ['Camera', data.camera],
+        ['Lens', data.lens],        ['Aspect Ratio', `${data.ratio} · ${state.orientation}`],
+        ['Aperture', data.aperture],
+        ['Shutter', data.shutter],
+        ['ISO', data.iso],
+        ['Focal Length', data.focal],
+        ['Exposure Comp', data.ev],
+        ['White Balance', data.wb],
+        ['Original Size', `${state.original.width}×${state.original.height}`],
+        ['File', state.file ? state.file.name : '—']
+      ];
+      $('exifGrid').innerHTML = rows.map(([label, value]) => `
+        <div class="exif-item"><small>${label}</small><b title="${String(value).replace(/"/g, '&quot;')}">${value || '—'}</b></div>
+      `).join('');
+    }
+
+    function resetCanvasOnly() {
+      $('canvas').style.display = 'none';
+      $('emptyState').style.display = 'block';
+      $('downloadBtn').disabled = true;
+      $('quickMeta').innerHTML = '';
+      $('status').textContent = 'Reading photo...';
+      $('exifGrid').innerHTML = '';
+    }
+
+    function resetAll() {
+      state.file = null;
+      state.image = null;
+      state.arrayBuffer = null;
+      state.exif = {};      state.ratioLabel = '';
+      state.original = { width: 0, height: 0 };
+      $('fileInput').value = '';      $('manualTitle').value = '';
+      $('status').textContent = 'No photo loaded';
+      resetCanvasOnly();
+    }
+
+    function downloadCanvas() {
+      const canvas = $('canvas');
+      if (!state.image) return;
+      const base = state.file.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9_-]+/gi, '-');
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `${base}-fuji-border.png`;
+      a.click();
+    }
+
+    $('fileInput').addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (file) loadFile(file);
+    });
+
+    const dropzone = $('dropzone');
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) loadFile(file);
+    });
+
+    CONTROLS.forEach(id => {
+      const el = $(id);
+      el.addEventListener('input', () => {
+        if (id === 'borderSize') $('borderSizeVal').textContent = `${el.value}%`;
+        if (id === 'bottomExtra') $('bottomExtraVal').textContent = `${el.value}%`;
+        render();
+      });
+      el.addEventListener('change', render);
+    });
+
+    $('downloadBtn').addEventListener('click', downloadCanvas);
+    $('resetBtn').addEventListener('click', resetAll);
+  </script>
+</body>
+</html>
